@@ -110,19 +110,22 @@ const SKIN_AM_INFO = [
   "1. Splash your face with LUKEWARM water. Woke up oily or sweaty? Use the Hydrating Cleanser instead: 1–2 pumps on wet hands, massage the whole face 30–45 seconds, rinse fully.",
   "2. Pat dry with a clean towel. Pat — never rub.",
   "3. While skin is still slightly damp: fingertip amount of the AM SPF30 Moisturiser. Dots on forehead, both cheeks, nose, chin — spread evenly. Include ears and neck.",
-  "4. That's it. SPF goes on EVERY morning, even cloudy days. Never use the SA cleanser in the morning.",
+  "4. This one stays on all day — it's your sunscreen. Reapply if you're outside for hours.",
+  "5. SPF goes on EVERY morning, even cloudy days. Never use the SA cleanser in the morning.",
 ];
 const SKIN_PM_NORMAL_INFO = [
   "1. Hydrating Cleanser: wet face with lukewarm water, 1–2 pumps, massage gently for 60 seconds, rinse completely.",
   "2. Pat with towel until skin is DAMP, not bone dry.",
   "3. Apply moisturiser on that damp skin (CeraVe PM when you buy it — the AM one works until then). Fingertip amount, spread evenly.",
-  "4. Nothing sits on your face waiting. The old 3–6 minute leave-on habit is what dried you out — it's gone forever.",
+  "4. LEAVE THE MOISTURISER ON ALL NIGHT. Do not rinse it, do not wipe it off. It works over hours while you sleep — that's the entire job.",
+  "5. Two kinds of product: cleansers are WASH-OFF (60 seconds, then rinse). Moisturiser is LEAVE-ON (all night, no timer). Never mix the two rules up.",
+  "6. In the morning you just splash with water — that takes off whatever's left. The old 3–6 minute cleanser leave-on habit is what dried you out; it's gone forever.",
 ];
 const SKIN_PM_SA_INFO = [
   "1. SA Smoothing Cleanser night (Mon + Thu only). Wet face with lukewarm water.",
   "2. Small amount, massage the whole face for 60 SECONDS MAX — put a timer on. Not 3 minutes. Not 6. Sixty seconds.",
   "3. Rinse COMPLETELY. It's a wash-off cleanser, it does not stay on the skin.",
-  "4. Pat until damp, then moisturiser straight away — SA nights need it most.",
+  "4. Pat until damp, then moisturiser straight away — SA nights need it most. It STAYS ON ALL NIGHT. The 60-second timer is for the cleanser only; moisturiser is never rinsed off.",
   "5. If your face feels tight or flaky this week, skip this SA night and use the Hydrating Cleanser instead. Dry skin = too much exfoliation.",
 ];
 
