@@ -205,7 +205,7 @@ function buildRoutine(dow) {
     }
   } else {
     steps.push({ id: "wake", time: "09:00", title: "Wake up", sub: "Lie-in, but still inside 9–11h" });
-    if (dow === 6) steps.push({ id: "weigh", time: "09:05", title: "Saturday weigh-in", sub: "After the toilet, before food. Log it in Progress" });
+    if (dow === 6) steps.push({ id: "weigh", time: "09:05", title: "Saturday weigh-in", sub: "After the toilet, before food. Log it in Progress, then tap Backup" });
     steps.push({ id: "shower-am", time: "09:10", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
     steps.push({ id: "bfast", time: "09:30", title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
     if (gymId) steps.push({ id: "gym", time: "12:00", title: `Gym: ${gymName} day`, sub: "Shower after", info: GYM_INFO });
@@ -242,7 +242,10 @@ function buildRoutine(dow) {
 // ---------------- HELPERS ----------------
 const STORAGE_KEY = "flow-program-v3";
 const OLD_KEY = "flow-program-v2";
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const EMPTY = { weights: {}, sessions: [], bodyweight: [], dayChecks: {}, drafts: {}, lastBackup: null };
+const clean = (p) => ({ weights: p.weights || {}, sessions: p.sessions || [], bodyweight: p.bodyweight || [], dayChecks: p.dayChecks || {}, drafts: p.drafts || {}, lastBackup: p.lastBackup || null });
+const daysSince = (iso) => iso ? Math.floor((new Date(todayStr() + "T12:00:00") - new Date(iso + "T12:00:00")) / 86400000) : null;
 const fmtDate = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const ytUrl = (q) => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
 
@@ -263,20 +266,21 @@ function migrateV2(parsed) {
     });
     return { ...s, entries };
   });
-  return { weights: parsed.weights || {}, sessions, bodyweight: parsed.bodyweight || [], dayChecks: {} };
+  return clean({ weights: parsed.weights, sessions, bodyweight: parsed.bodyweight });
 }
 
 export default function App() {
   const [tab, setTab] = useState("day");
   const [dayId, setDayId] = useState(GYM_BY_DOW[new Date().getDay()] || "push");
-  const [data, setData] = useState({ weights: {}, sessions: [], bodyweight: [], dayChecks: {} });
+  const [data, setData] = useState(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [draftW, setDraftW] = useState({});
   const [draftR, setDraftR] = useState({});
   const [toast, setToast] = useState(null);
   const [bwInput, setBwInput] = useState("");
   const [openInfo, setOpenInfo] = useState({});
-  const saveTimer = useRef(null);
+  const fileRef = useRef(null);
+  const [rev, setRev] = useState(0);
 
   const dow = new Date().getDay();
   const routine = buildRoutine(dow);
@@ -288,7 +292,7 @@ export default function App() {
         const res = await window.storage.get(STORAGE_KEY);
         if (res && res.value) {
           const p = JSON.parse(res.value);
-          setData({ weights: p.weights || {}, sessions: p.sessions || [], bodyweight: p.bodyweight || [], dayChecks: p.dayChecks || {} });
+          setData(clean(p));
           setLoaded(true);
           return;
         }
@@ -299,23 +303,36 @@ export default function App() {
       } catch (e) { /* fresh start */ }
       setLoaded(true);
     })();
+    // Ask the browser to treat this app's data as important so it isn't cleared to free space.
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* not supported */ }
   }, []);
 
   useEffect(() => {
     if (!loaded) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try { await window.storage.set(STORAGE_KEY, JSON.stringify(data)); } catch (e) { console.error("save failed", e); }
-    }, 400);
-    return () => saveTimer.current && clearTimeout(saveTimer.current);
+    (async () => {
+      try { await window.storage.set(STORAGE_KEY, JSON.stringify(data)); }
+      catch (e) { setToast({ type: "warn", msg: "Couldn't save on this device. Tap Backup in Progress now so nothing is lost." }); }
+    })();
   }, [data, loaded]);
 
   useEffect(() => {
     const day = PROGRAM.find((d) => d.id === dayId);
+    const saved = data.drafts?.[dayId];
+    const fresh = saved && saved.date === todayStr();
     const w = {}; const r = {};
-    day.exercises.forEach((ex) => { w[ex.id] = data.weights[ex.id] ?? ex.rec; r[ex.id] = 0; });
+    day.exercises.forEach((ex) => {
+      w[ex.id] = fresh && saved.w[ex.id] != null ? saved.w[ex.id] : (data.weights[ex.id] ?? ex.rec);
+      r[ex.id] = fresh && saved.r[ex.id] != null ? saved.r[ex.id] : 0;
+    });
     setDraftW(w); setDraftR(r);
-  }, [dayId, loaded]); // eslint-disable-line
+  }, [dayId, loaded, rev]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!loaded) return;
+    const day = PROGRAM.find((d) => d.id === dayId);
+    if (!day.exercises.every((ex) => ex.id in draftW && ex.id in draftR)) return; // drafts not set up for this day yet
+    setData((p) => ({ ...p, drafts: { ...(p.drafts || {}), [dayId]: { date: todayStr(), w: draftW, r: draftR } } }));
+  }, [draftW, draftR]); // eslint-disable-line
 
   const day = PROGRAM.find((d) => d.id === dayId);
 
@@ -373,6 +390,48 @@ export default function App() {
     const t = setTimeout(() => setToast(null), 6000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  const backup = async () => {
+    const stamp = todayStr();
+    const json = JSON.stringify({ app: "b3plan", version: 3, saved: stamp, data: { ...data, lastBackup: stamp } }, null, 1);
+    const name = `b3plan-backup-${stamp}.json`;
+    let ok = false;
+    try {
+      const file = new File([json], name, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "b3plan backup" });
+        ok = true;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // closed the share sheet
+    }
+    if (!ok) {
+      const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    setData((p) => ({ ...p, lastBackup: stamp }));
+    setToast({ type: "good", msg: "Backup made. Keep the file somewhere safe (Files, iCloud Drive, email it to yourself)." });
+  };
+
+  const restore = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const parsed = JSON.parse(await f.text());
+      const d = parsed && parsed.data ? parsed.data : parsed;
+      if (!d || !Array.isArray(d.sessions) || typeof d.weights !== "object") throw new Error("bad file");
+      const msg = `Restore backup from ${parsed.saved || "this file"}? (${d.sessions.length} workouts, ${(d.bodyweight || []).length} weigh-ins). This replaces what's on this phone now.`;
+      if (!window.confirm(msg)) return;
+      setData(clean(d));
+      setRev((n) => n + 1); // reload Lift tab weights from the restored data
+      setToast({ type: "good", msg: "Backup restored." });
+    } catch (err) {
+      setToast({ type: "warn", msg: "That file isn't a b3plan backup." });
+    }
+  };
 
   const addBodyweight = () => {
     const v = parseFloat(bwInput);
@@ -573,6 +632,18 @@ export default function App() {
               </div>
             )}
           </div>
+          <div className="sec-h">BACKUP</div>
+          <div className="card">
+            <div className={"bk-status" + (daysSince(data.lastBackup) == null || daysSince(data.lastBackup) > 7 ? " bk-warn" : "")}>
+              {data.lastBackup == null ? "No backup yet. Make one now." : daysSince(data.lastBackup) === 0 ? "Backed up today ✓" : `Last backup: ${daysSince(data.lastBackup)} day${daysSince(data.lastBackup) === 1 ? "" : "s"} ago${daysSince(data.lastBackup) > 7 ? ". Make a new one." : ""}`}
+            </div>
+            <div className="bk-row">
+              <button className="bw-btn bk-btn" onClick={backup}>Backup</button>
+              <button className="bk-btn bk-sec" onClick={() => fileRef.current && fileRef.current.click()}>Restore</button>
+              <input ref={fileRef} type="file" accept=".json,application/json" onChange={restore} style={{ display: "none" }} />
+            </div>
+            <div className="bk-note">Your data lives on this phone only. Back up every Saturday after you weigh in, and save the file to Files / iCloud Drive or email it to yourself. Restore puts it back on a new phone or after data gets wiped.</div>
+          </div>
           <div className="sec-h">SESSIONS · {data.sessions.length} LOGGED</div>
           {data.sessions.length === 0 && <div className="card empty-c">No workouts saved yet. Finish your first session in the Lift tab.</div>}
           {[...data.sessions].reverse().slice(0, 12).map((s, i) => (
@@ -699,6 +770,12 @@ body{margin:0;}
 .sess-d{font-size:12px;color:var(--mut);}
 .lvl{color:var(--good);font-size:12px;font-weight:700;background:#12241C;border:1px solid #1E3A2E;padding:4px 8px;border-radius:8px;}
 .empty-c{color:var(--mut);font-size:13px;}
+.bk-status{font-size:14px;font-weight:600;color:var(--good);}
+.bk-warn{color:var(--warn);}
+.bk-row{display:flex;gap:8px;margin-top:10px;}
+.bk-btn{flex:1;padding:12px 0;font-size:15px;border-radius:10px;cursor:pointer;font-weight:700;}
+.bk-sec{background:#1F2630;border:1px solid var(--line);color:var(--txt);}
+.bk-note{font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5;}
 .toast{position:fixed;left:14px;right:14px;bottom:84px;padding:12px 14px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:20;animation:up .25s ease;line-height:1.4;}
 .toast-g{background:#12241C;border:1px solid #2A5A45;color:var(--good);}
 .toast-w{background:#2A2113;border:1px solid #5A4420;color:var(--warn);}
