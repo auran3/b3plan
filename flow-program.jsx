@@ -62,47 +62,91 @@ const PROGRAM = [
   },
 ];
 
-// Gym days: Mon, Tue, Wed, Sat, Sun. Rest: Thu, Fri. (JS getDay: 0=Sun)
-const GYM_BY_DOW = { 1: "push", 2: "pull", 3: "legs", 6: "upper", 0: "lower" };
+// Gym days: Mon, Tue, Wed, Fri, Sat. Rest: Thu, Sun. (JS getDay: 0=Sun)
+const GYM_BY_DOW = { 1: "push", 2: "pull", 3: "legs", 5: "upper", 6: "lower" };
 const SA_NIGHTS = [1, 4]; // Monday & Thursday nights
 
 const WEEK_LAYOUT = [
-  ["Mon", "Push"], ["Tue", "Pull"], ["Wed", "Legs"], ["Thu", "Rest"], ["Fri", "Rest"], ["Sat", "Upper"], ["Sun", "Lower"],
+  ["Mon", "Push"], ["Tue", "Pull"], ["Wed", "Legs"], ["Thu", "Rest"], ["Fri", "Upper"], ["Sat", "Lower"], ["Sun", "Rest"],
 ];
 
 // ---------------- DIET DATA ----------------
+// Daily target: ~3000 kcal · ~110g protein · ~85g fat · ~420g carbs.
+// Breakfast + lunch + snack are fixed (~2040 kcal, 305g carbs). Dinner is your call and fills the rest.
 const DIET_TARGETS = [
-  { label: "Calories", value: "~2,900–3,000", note: "kcal / day" },
-  { label: "Protein", value: "115–125 g", note: "~2 g per kg" },
+  { label: "Calories", value: "~3,000", note: "kcal / day" },
+  { label: "Protein", value: "~110 g", note: "some at every meal" },
+  { label: "Carbs", value: "~420 g", note: "the hard one, so eat the rice" },
+  { label: "Fat", value: "~85 g", note: "a bit over on ribeye nights is fine" },
+  { label: "Sleep", value: "9–11 h", note: "lights out 21:30 on school nights" },
   { label: "Gain rate", value: "0.25–0.5 kg", note: "per week" },
-  { label: "Sleep", value: "8.5–9.5 h", note: "non-negotiable" },
 ];
+
+const BREAKFAST = {
+  food: "Overnight oats: 100g oats + 400ml whole milk + banana + honey",
+  macros: "~800 kcal · 27g P · 21g F · 122g C",
+  info: [
+    "Made the night before (Prep step), so it's ready instantly: 100g oats + 400ml whole milk in a tub, lid on, fridge.",
+    "Morning: slice a banana on top + 1 big spoon of honey (~20g). Eat it cold, or microwave 2 min if you want it hot.",
+    "~800 kcal · 27g protein · 21g fat · 122g carbs.",
+    "Swap: 3 eggs + 3 buttered toast + banana + glass of milk (~830 kcal, 38g P). Takes ~10 min and has fewer carbs, so only if you're up on time.",
+  ],
+};
+
+const LUNCH = {
+  food: "2 chicken wraps with cheese + apple + 250ml orange juice",
+  macros: "~870 kcal · 49g P · 20g F · 120g C",
+  info: [
+    "2 large flour wraps + 100g cooked chicken split between them + 1 slice of cheese + salad + sweet chilli or salsa.",
+    "+ 1 apple + 250ml orange juice (a carton is fine).",
+    "~870 kcal · 49g protein · 20g fat · 120g carbs. This is about half your day's protein, so don't skip it.",
+    "Chicken: cook a batch on Sunday (for Mon–Wed) and Wednesday (for Thu–Fri). Cooked chicken keeps ~3 days in the fridge. Pack it with an ice pack or a frozen drink.",
+    "Buying lunch instead? A chicken wrap or sandwich + juice + fruit or a flapjack. Skip crisps-only meal deals because they have no protein.",
+  ],
+};
+
+const SNACK = {
+  food: "Banana + flapjack (~60g)",
+  macros: "~375 kcal · 4g P · 12g F · 63g C",
+  info: [
+    "Banana + a ~60g flapjack: ~375 kcal, 63g carbs. Quick fuel straight after school.",
+    "Swap: 2 cereal bars + banana, or a bagel with jam.",
+  ],
+};
+
+const DINNER = {
+  food: "Rice (or other carbs) + meat. Your call",
+  macros: "aim ~900–1,100 kcal · 40g+ P · ~118g C",
+  info: [
+    "Your call. Just roughly hit this: ~150g DRY rice (≈ 450g cooked, about 3 fists) + meat.",
+    "Ribeye night (3× a week): one ~200g raw ribeye. ≈ 37g protein, 44g fat. No extra oil needed.",
+    "Other nights: ~150–200g chicken thigh, mince, etc., cooked in 1 tbsp olive oil or butter.",
+    "Not rice? ~150g dry pasta, or ~600g potatoes (about 3 medium).",
+    "Why so much carbs: breakfast + lunch + snack give ~305g, and dinner brings the last ~115g to reach 420g.",
+  ],
+};
 
 const MEAL_SKELETON = [
-  { time: "07:35 — Breakfast", food: "80g oats + 300ml whole milk + 1 banana + 25g peanut butter + honey. (Swap: 3 eggs + 2 buttered toast + cheese)", kcal: "~700 kcal · 22g P" },
-  { time: "School lunch", food: "Chicken wrap or sandwich + fruit + flapjack/cereal bar + 500ml milk or juice", kcal: "~650 kcal · 30g P" },
-  { time: "After school (pre-gym)", food: "170g Greek yogurt + honey + a banana, or 2 peanut butter toast + fruit", kcal: "~350 kcal · 15g P" },
-  { time: "Dinner (post-gym)", food: "Protein of the day (below) + 100g dry-weight rice / pasta / potatoes + veg cooked in olive oil", kcal: "~850 kcal · 50g P" },
-  { time: "21:30 — Supper", food: "300ml whole milk + 2 peanut butter toast, or Greek yogurt + honey", kcal: "~400 kcal · 17g P" },
+  { time: "07:50: Breakfast", food: BREAKFAST.food, kcal: BREAKFAST.macros },
+  { time: "School lunch", food: LUNCH.food, kcal: LUNCH.macros },
+  { time: "15:40: Snack (on the way to the gym)", food: SNACK.food, kcal: SNACK.macros },
+  { time: "18:30: Dinner", food: DINNER.food, kcal: DINNER.macros },
 ];
 
-const DINNERS = [
-  ["Mon", "Beef mince bolognese with pasta, parmesan on top"],
-  ["Tue", "Chicken thighs (oven, seasoned) + rice + roasted veg"],
-  ["Wed", "Ribeye + potatoes + fried mushrooms in the steak fat"],
-  ["Thu", "Salmon fillet + rice + broccoli, olive oil over everything"],
-  ["Fri", "Homemade chicken burgers or wraps, cheese, extra bun"],
-  ["Sat", "Steak & eggs brunch. Dinner flexible — eat out / pizza is fine"],
-  ["Sun", "Roast chicken + roast potatoes + veg. Cook extra chicken for Monday's lunch"],
+const DINNER_GUIDE = [
+  ["Carbs", "~150g dry rice (≈ 450g cooked). Or 150g dry pasta / ~600g potatoes"],
+  ["Meat", "~150–200g chicken thigh, mince, etc. + 1 tbsp olive oil or butter"],
+  ["Steak", "Ribeye 3× a week: ~200g raw ≈ 37g P, 44g F. Skip the oil those nights"],
+  ["Total", "Normal day ≈ 2,900 kcal · 123g P · 75g F · 423g C. Ribeye day ≈ 3,130 kcal · 127g P · 98g F · 423g C"],
 ];
 
 const DIET_RULES = [
   "Weigh yourself every Sat morning after the toilet, before food. Log it in Progress.",
-  "Scale not moving up after 2 weeks? Add 1 extra glass of whole milk + 1 spoon peanut butter daily (~300 kcal).",
-  "Gaining faster than 0.5 kg/week? Drop the supper toast.",
-  "Milk with meals instead of water = easiest free calories.",
-  "3 dairy servings a day for calcium (growth). UK winter: a 10µg vitamin D tablet daily is standard NHS advice.",
-  "Protein at every meal. The daily skeleton already hits ~120g if you don't skip meals.",
+  "Scale not moving up after 2 weeks? Add 300ml whole milk + 1 spoon peanut butter daily (~300 kcal).",
+  "Gaining faster than 0.5 kg/week? Cut dinner rice to ~120g dry.",
+  "Carbs are the hardest number to hit. Don't shrink the rice portion, because it's most of dinner's carbs.",
+  "Ribeye nights push fat to ~98g. That's fine because the other nights land under 85g.",
+  "UK winter: a 10µg vitamin D tablet daily is standard NHS advice.",
 ];
 
 // ---------------- SKINCARE INFO ----------------
@@ -132,42 +176,65 @@ const SKIN_PM_SA_INFO = [
 // ---------------- DAILY ROUTINE BUILDER ----------------
 const DOW_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+const GYM_INFO = [
+  "Warm-up: 5 min bike or jump rope + 1 light set of the first exercise per muscle.",
+  "4 sets each exercise. Rest ~2 min on the first two exercises, 60–90s after.",
+  "Log the reps of your final set in the Lift tab and hit Finish Workout. The app sets next session's weights.",
+];
+
 function buildRoutine(dow) {
-  const weekend = dow === 0 || dow === 6;
+  const schoolDay = dow >= 1 && dow <= 5;
+  const schoolTomorrow = dow >= 0 && dow <= 4;
   const gymId = GYM_BY_DOW[dow];
   const gymName = gymId ? PROGRAM.find((p) => p.id === gymId).name : null;
+  const gymTomorrow = !!GYM_BY_DOW[(dow + 1) % 7];
   const saNight = SA_NIGHTS.includes(dow);
-  const dinner = DINNERS[(dow + 6) % 7][1];
   const steps = [];
 
-  steps.push({ id: "wake", time: weekend ? "08:45" : "07:30", title: "Wake up", sub: "Big glass of water before anything else" });
-  if (dow === 6) steps.push({ id: "weigh", time: "08:50", title: "Saturday weigh-in", sub: "After the toilet, before food. Log it in the Progress tab" });
-  steps.push({
-    id: "bfast", time: weekend ? "09:15" : "07:35", title: weekend ? "Big breakfast" : "Breakfast",
-    sub: dow === 6 ? "Steak & eggs brunch — you've earned it" : "Oats + milk + banana + peanut butter",
-    info: ["80g oats + 300ml whole milk, microwave ~2 min, stir in 25g peanut butter + a squeeze of honey, sliced banana on top.", "Swap option: 3 eggs (fried/scrambled in butter) + 2 buttered toast + a slice of cheese.", "Never skip this. It's ~700 kcal of your gain."],
-  });
-  steps.push({ id: "skinam", time: weekend ? "09:45" : "07:50", title: "Morning skincare", sub: "Water → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
-
-  if (!weekend) {
-    steps.push({ id: "lunch", time: "~12:30", title: "School lunch", sub: "Chicken wrap/sandwich + fruit + flapjack + 500ml milk or juice", info: ["Aim for a protein source, a carb, and a drink with calories.", "Buying lunch? Chicken anything + a milk-based drink beats a meal deal with crisps.", "This meal is where skinny guys silently lose their surplus. Don't skip it."] });
-  }
-
-  if (gymId) {
-    steps.push({ id: "snack", time: weekend ? "12:00" : "16:00", title: "Pre-gym snack", sub: "Greek yogurt + honey + banana, or 2 PB toast" });
-    steps.push({ id: "gym", time: weekend ? "13:00" : "16:45", title: `Gym — ${gymName} day`, sub: "Open the Lift tab, follow the weights, log your last-set reps", info: ["Warm-up: 5 min bike or jump rope + 1 light set of the first exercise per muscle.", "4 sets each exercise. Rest ~2 min on the first two exercises, 60–90s after.", "Log the reps of your final set in the Lift tab and hit Finish Workout — the app sets next session's weights."] });
+  if (schoolDay) {
+    steps.push({ id: "wake", time: "07:30", title: "Wake up", sub: "Glass of water" });
+    steps.push({ id: "shower-am", time: "07:35", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
+    steps.push({ id: "bfast", time: "07:50", title: "Breakfast", sub: BREAKFAST.food, info: BREAKFAST.info });
+    steps.push({ id: "leave", time: "08:05", title: "Leave for school", sub: gymId ? "Take lunch, snack and gym kit · school 08:30" : "Take lunch + snack · school 08:30" });
+    steps.push({ id: "lunch", time: "LUNCH BREAK", title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
+    if (gymId) {
+      steps.push({ id: "gym", time: "15:40 – 17:00", title: `Gym: ${gymName} day`, sub: `Snack on the way: ${SNACK.food.toLowerCase()}`, info: [...SNACK.info, ...GYM_INFO] });
+      steps.push({ id: "shower-pm", time: "17:30", title: "Shower", sub: "Home by 17:15, straight in" });
+    } else {
+      steps.push({ id: "snack", time: "15:40", title: "Snack: rest day", sub: SNACK.food, info: ["Still eat it on rest days, because muscle is built on rest days and needs the calories.", ...SNACK.info] });
+    }
   } else {
-    steps.push({ id: "walk", time: "16:30", title: "Rest day movement", sub: "Optional 20–30 min walk or easy jump rope — keep it light", info: ["Rest days are where muscle is actually built. Don't sneak in a workout.", "A walk helps appetite and recovery. Nothing intense."] });
+    steps.push({ id: "wake", time: "09:00", title: "Wake up", sub: "Lie-in, but still inside 9–11h" });
+    if (dow === 6) steps.push({ id: "weigh", time: "09:05", title: "Saturday weigh-in", sub: "After the toilet, before food. Log it in Progress" });
+    steps.push({ id: "shower-am", time: "09:10", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
+    steps.push({ id: "bfast", time: "09:30", title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
+    if (gymId) steps.push({ id: "gym", time: "12:00", title: `Gym: ${gymName} day`, sub: "Shower after", info: GYM_INFO });
+    steps.push({ id: "lunch", time: "13:30", title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
+    steps.push({ id: "snack", time: "16:00", title: "Snack", sub: SNACK.food, info: SNACK.info });
   }
 
-  steps.push({ id: "dinner", time: "19:00", title: "Dinner", sub: dinner, info: ["Plate = protein + 100g dry-weight carbs (rice/pasta/potatoes) + veg.", "Cook the veg in olive oil, salt it properly. Olive oil is free calories.", "Drink milk with it, not water."] });
-  steps.push({ id: "supper", time: "21:30", title: "Supper", sub: "300ml whole milk + 2 PB toast, or Greek yogurt + honey" });
+  steps.push({ id: "dinner", time: "18:30", title: "Dinner", sub: `${DINNER.food} · ${DINNER.macros}`, info: DINNER.info });
+
+  if (schoolTomorrow) {
+    const cook = dow === 0 || dow === 3;
+    steps.push({
+      id: "prep", time: "20:30", title: "Prep tomorrow",
+      sub: ["Oats in the fridge", "pack lunch + snack", gymTomorrow ? "gym kit by the door" : null, cook ? "cook the chicken batch" : null].filter(Boolean).join(" · "),
+      info: ["Overnight oats: 100g oats + 400ml whole milk in a tub, lid on, fridge. Takes 1 minute.", "Mornings are 35 minutes, so anything done tonight is time saved tomorrow.", ...(cook ? ["Chicken batch: ~300g cooked covers the next 3 lunches. It keeps ~3 days in the fridge."] : [])],
+    });
+  }
+
+  const skinSub = saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Cleanser → moisturise on damp skin";
   steps.push({
-    id: "skinpm", time: "22:00", title: saNight ? "Night skincare — SA night" : "Night skincare",
-    sub: saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Hydrating cleanser → moisturise on damp skin",
-    info: saNight ? SKIN_PM_SA_INFO : SKIN_PM_NORMAL_INFO,
+    id: "bed", time: schoolTomorrow ? "21:15" : "22:15",
+    title: saNight ? "Skincare (SA night) → bed" : "Skincare → bed",
+    sub: schoolTomorrow ? `${skinSub} · lights out 21:30 = 10h` : `${skinSub} · lights out 22:30 = 10.5h`,
+    info: [
+      ...(saNight ? SKIN_PM_SA_INFO : SKIN_PM_NORMAL_INFO),
+      schoolTomorrow ? "Sleep: lights out 21:30 gives 10h before 07:30. Latest is 22:30 (9h)." : "Sleep: lights out 22:30 gives 10.5h before 09:00.",
+      "Phone away before lights out. Sleep is when growth and muscle repair actually happen.",
+    ],
   });
-  steps.push({ id: "sleep", time: "22:30", title: "Phone away, lights out", sub: "8.5–9h sleep. This is where height, testosterone and muscle actually happen" });
 
   return steps;
 }
@@ -474,9 +541,9 @@ export default function App() {
               <div className="meal-k">{m.kcal}</div>
             </div>
           ))}
-          <div className="sec-h">DINNER ROTATION</div>
+          <div className="sec-h">DINNER (YOUR CALL)</div>
           <div className="card">
-            {DINNERS.map(([d, m]) => (
+            {DINNER_GUIDE.map(([d, m]) => (
               <div className="din-row" key={d}><span className="din-d">{d}</span><span className="din-m">{m}</span></div>
             ))}
           </div>
@@ -610,7 +677,7 @@ body{margin:0;}
 .meal-k{font-size:12px;color:var(--mut);margin-top:4px;}
 .din-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.4;}
 .din-row:last-child{border-bottom:none;}
-.din-d{color:var(--acc);font-weight:700;min-width:36px;font-family:'Barlow Condensed';font-size:16px;}
+.din-d{color:var(--acc);font-weight:700;min-width:48px;font-family:'Barlow Condensed';font-size:16px;}
 .din-m{color:var(--txt);}
 .rule{display:flex;gap:9px;font-size:13.5px;line-height:1.5;padding:5px 0;color:var(--txt);}
 .rule-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:var(--acc);margin-top:7px;}
