@@ -358,11 +358,11 @@ function buildRoutine(dow) {
     }
   } else {
     const sat = dow === 6;
-    // Sat: lights out 01:00 Fri night → wake 11:30. Sun: lights out 01:00 Sat night → wake 11:00 (earlier, for the early Sunday night).
+    // Fri & Sat nights: lights out 00:00 → wake 11:00 = 11h (the max).
     const t = sat
-      ? { wake: "11:30", shower: "11:40", bfast: "12:00", train: "13:30 – 14:30", lunch: "15:00", snack: "17:30" }
+      ? { wake: "11:00", shower: "11:10", bfast: "11:30", train: "13:00 – 14:00", lunch: "14:30", snack: "17:30" }
       : { wake: "11:00", shower: "11:10", bfast: "11:30", train: "13:00 – 15:00", lunch: "15:30", snack: "17:30" };
-    steps.push({ id: "wake", time: t.wake, title: "Wake up", sub: sat ? "Lights out was 01:00 = 10.5h · glass of water" : "Lights out was 01:00 = 10h · glass of water" });
+    steps.push({ id: "wake", time: t.wake, title: "Wake up", sub: "Lights out was 00:00 = 11h · glass of water" });
     if (!sat) steps.push({ id: "weigh", time: "11:05", title: "Sunday weigh-in", sub: "After the toilet, before food. Log it in Progress, then tap Backup" });
     steps.push({ id: "shower-am", time: t.shower, title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
     steps.push({ id: "bfast", time: t.bfast, title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
@@ -399,10 +399,10 @@ function buildRoutine(dow) {
 
   const skinSub = saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Cleanser → moisturise on damp skin";
   const bed = dow === 0
-    ? { time: "22:15", out: "22:30", sleep: "9h", note: "Sunday: you woke at 11:00, so 21:30 is too early to fall asleep. 22:30 still gives 9h before Monday's 07:30. Don't go later." }
+    ? { time: "21:15", out: "21:30", sleep: "10h", note: "Sunday: lights out 21:30 gives 10h before Monday's 07:30. Can't sleep yet? Lie down anyway with the phone away. Latest is 22:30 (9h)." }
     : schoolTomorrow
       ? { time: "21:15", out: "21:30", sleep: "10h", note: "Sleep: lights out 21:30 gives 10h before 07:30. Latest is 22:30 (9h)." }
-      : { time: "00:45", out: "01:00", sleep: dow === 5 ? "10.5h" : "10h", note: dow === 5 ? "Lights out 01:00 → wake 11:30 = 10.5h." : "Lights out 01:00 → wake 11:00 = 10h. Not later: Sunday has to be an early night for school." };
+      : { time: "23:45", out: "00:00", sleep: "11h", note: dow === 5 ? "Lights out 00:00 → wake 11:00 = 11h." : "Lights out 00:00 → wake 11:00 = 11h. Not later, because Sunday is an early night for school." };
   steps.push({
     id: "bed", time: bed.time,
     title: saNight ? "Skincare (SA night) → bed" : "Skincare → bed",
