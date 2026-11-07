@@ -72,6 +72,8 @@ body{margin:0;}
 .stp:active{background:var(--acc);color:#14100C;}
 .stp-s{width:34px;height:34px;font-size:17px;border-radius:8px;}
 .w-num{font-family:'Barlow Condensed';font-size:32px;font-weight:700;min-width:74px;text-align:center;font-variant-numeric:tabular-nums;}
+.grp-h{font-family:'Barlow Condensed';letter-spacing:.16em;font-size:13px;color:var(--acc);font-weight:700;text-transform:uppercase;margin:14px 2px 6px;}
+.w-bw{font-family:'Barlow Condensed';font-size:22px;font-weight:600;color:var(--mut);letter-spacing:.04em;}
 .w-unit{font-size:16px;color:var(--mut);margin-left:2px;}
 .rep-block{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:3px;}
 .rep-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:600;}
@@ -149,77 +151,101 @@ window.storage = {
 };
 </script>
 <script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, Fragment } = React;
 
 // ---------------- PROGRAM DATA ----------------
 // rec = recommended starting weight (kg). The app adjusts it from your logged reps.
-// DB exercises = kg PER dumbbell. Smith = added plates total (don't count the bar).
-// Every exercise: 4 sets. You log the reps of your LAST set only.
-const SETS = 4;
+// DB = dumbbell, kg PER dumbbell. B = barbell, TOTAL kg including the 20kg bar.
+// Cable single-arm moves = kg per arm. inc 0 = bodyweight only (no weight to track).
+// Sets are per exercise. You log the reps of your LAST set only.
+// The same exercise id on two days shares its weight + history (e.g. Leg Extension on Legs and Lower).
+const ABS_A = [
+  { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
+  { id: "straight-leg-raise", grp: "Abs", name: "Straight Leg Raise", equip: "Bodyweight, lying or hanging", sets: 2, repMin: 10, repMax: 15, inc: 0, rec: 0, vid: "straight leg raise abs technique" },
+  { id: "side-bend", grp: "Abs", name: "Side Bend", equip: "DB in one hand (kg), reps per side", sets: 2, repMin: 12, repMax: 15, inc: 2, rec: 12, vid: "dumbbell side bend technique" },
+];
+const DELTS = [
+  { id: "cable-lat-raise", grp: "Shoulders", name: "Cable Lateral Raise", equip: "Cable, low pulley, single arm (kg per arm)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 2.5, vid: "Jeff Nippard cable lateral raise technique" },
+  { id: "cable-y-raise", grp: "Shoulders", name: "Cable Y Raise", equip: "Cables crossed, low pulleys (kg per side)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 2.5, vid: "cable Y raise technique" },
+];
+const SEATED_FLY = { id: "seated-fly", grp: "Chest", name: "Seated Chest Fly", equip: "Machine (pec deck)", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 20, vid: "Renaissance Periodization pec deck fly technique" };
+const BAYESIAN = { id: "bayesian-curl", grp: "Biceps", name: "Cable Bayesian Curl", equip: "Cable behind you, single arm (kg per arm)", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 5, vid: "Jeff Nippard bayesian cable curl technique" };
+const OH_TRI = { id: "oh-triceps", grp: "Triceps", name: "Cable Overhead Triceps Extension", equip: "Cable, rope", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 10, vid: "Jeff Nippard overhead cable triceps extension technique" };
+const LEGS_CORE = [
+  { id: "leg-ext", grp: "Quads + Hamstrings", name: "Leg Extension", equip: "Machine", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization leg extension technique" },
+  { id: "leg-curl", grp: "Quads + Hamstrings", name: "Leg Curl", equip: "Machine", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization seated leg curl technique" },
+  { id: "rdl", grp: "Hamstrings + Calves", name: "Romanian Deadlift", equip: "B (total kg), hinge at the hips", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard Romanian deadlift technique" },
+  { id: "calf-raise", grp: "Hamstrings + Calves", name: "Calf Raise", equip: "Machine, full stretch at the bottom", sets: 3, repMin: 12, repMax: 20, inc: 5, rec: 40, vid: "Jeff Nippard calf raise technique" },
+];
+const HIP_THRUST = { id: "hip-thrust", grp: "Squat + Glutes", name: "Hip Thrust", equip: "B across hips, back on a bench (total kg)", sets: 3, repMin: 10, repMax: 12, inc: 5, rec: 40, vid: "Jeff Nippard barbell hip thrust technique" };
+
 const PROGRAM = [
   {
-    id: "push", name: "Push", sub: "Chest · Shoulders · Triceps",
+    id: "chest", name: "Chest", sub: "Chest · Biceps · Shoulders · Abs",
     exercises: [
-      { id: "chest-press", name: "Chest Press", equip: "Machine", repMin: 8, repMax: 12, inc: 2.5, rec: 20, vid: "Renaissance Periodization machine chest press technique" },
-      { id: "shoulder-press-m", name: "Shoulder Press", equip: "Machine", repMin: 8, repMax: 12, inc: 2.5, rec: 15, vid: "Renaissance Periodization machine shoulder press technique" },
-      { id: "dips", name: "Seated Dip Machine", equip: "Machine", repMin: 8, repMax: 12, inc: 2.5, rec: 25, vid: "Renaissance Periodization machine dip technique" },
-      { id: "cable-fly", name: "Cable Fly", equip: "Cables, mid height", repMin: 12, repMax: 15, inc: 2.5, rec: 10, vid: "Jeff Nippard cable fly technique" },
-      { id: "lat-raise", name: "Lateral Raise", equip: "Dumbbells (kg per DB)", repMin: 12, repMax: 15, inc: 2, rec: 4, vid: "Jeff Nippard lateral raise technique" },
-      { id: "pushdown", name: "Triceps Rope Pushdown", equip: "Cable", repMin: 10, repMax: 15, inc: 2.5, rec: 15, vid: "Jeff Nippard triceps pushdown technique" },
+      { id: "incline-db-15", grp: "Chest", name: "15° Incline DB Press", equip: "DB (kg per DB), bench at 15°", sets: 3, repMin: 8, repMax: 12, inc: 2, rec: 12, vid: "Jeff Nippard low incline dumbbell press technique" },
+      SEATED_FLY,
+      { id: "chest-press", grp: "Chest", name: "Chest Press", equip: "Machine", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 20, vid: "Renaissance Periodization machine chest press technique" },
+      BAYESIAN,
+      { id: "db-preacher", grp: "Biceps", name: "DB Preacher Curl", equip: "DB (kg per DB), preacher bench", sets: 3, repMin: 10, repMax: 12, inc: 2, rec: 6, vid: "dumbbell preacher curl technique" },
+      { id: "db-hammer-preacher", grp: "Biceps", name: "DB Hammer Preacher Curl", equip: "DB (kg per DB), preacher bench, thumbs up", sets: 3, repMin: 10, repMax: 12, inc: 2, rec: 6, vid: "dumbbell hammer preacher curl technique" },
+      ...DELTS,
+      ...ABS_A,
     ],
   },
   {
-    id: "pull", name: "Pull", sub: "Back · Rear delts · Biceps",
+    id: "legs", name: "Legs", sub: "Quads · Hamstrings · Calves · Glutes",
     exercises: [
-      { id: "pulldown", name: "Lat Pulldown", equip: "Machine, shoulder-width grip", repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard lat pulldown technique" },
-      { id: "cable-row", name: "Seated Cable Row", equip: "Cable", repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard seated cable row technique" },
-      { id: "rear-delt", name: "Rear Delt Row", equip: "Technogym machine", repMin: 10, repMax: 15, inc: 2.5, rec: 15, vid: "Renaissance Periodization rear delt row machine technique" },
-      { id: "face-pull", name: "Face Pull", equip: "Cable, rope at face height", repMin: 12, repMax: 15, inc: 2.5, rec: 15, vid: "Athlean-X face pull technique" },
-      { id: "ez-curl", name: "EZ Bar Curl", equip: "Bar + plates (total kg)", repMin: 8, repMax: 12, inc: 2.5, rec: 15, vid: "Renaissance Periodization ez bar curl technique" },
-      { id: "hammer-curl", name: "Hammer Curl", equip: "Dumbbells (kg per DB)", repMin: 10, repMax: 15, inc: 2, rec: 8, vid: "Renaissance Periodization hammer curl technique" },
+      ...LEGS_CORE,
+      { id: "bench-squat", grp: "Squat + Glutes", name: "Bench Squat", equip: "B on your back, sit down to a bench (total kg)", sets: 3, repMin: 8, repMax: 10, inc: 2.5, rec: 30, vid: "box squat technique" },
+      HIP_THRUST,
     ],
   },
   {
-    id: "legs", name: "Legs", sub: "Quads · Hamstrings · Calves",
+    id: "back", name: "Back", sub: "Back · Triceps · Shoulders · Abs",
     exercises: [
-      { id: "leg-press", name: "Leg Press", equip: "Machine", repMin: 8, repMax: 12, inc: 5, rec: 60, vid: "Renaissance Periodization leg press technique" },
-      { id: "smith-squat", name: "Smith Machine Squat", equip: "Added plates total, feet slightly forward", repMin: 8, repMax: 10, inc: 2.5, rec: 20, vid: "Jeremy Ethier smith machine squat technique" },
-      { id: "leg-curl", name: "Leg Curl", equip: "Machine", repMin: 10, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization seated leg curl technique" },
-      { id: "leg-ext", name: "Leg Extension", equip: "Machine", repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization leg extension technique" },
-      { id: "calf-press", name: "Calf Press", equip: "On leg press, full stretch at bottom", repMin: 15, repMax: 20, inc: 5, rec: 60, vid: "Renaissance Periodization leg press calf raise technique" },
+      { id: "meadows-row", grp: "Back", name: "Meadows Row", equip: "B in a landmine corner (kg of plates on the bar)", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 10, vid: "Jeff Nippard meadows row technique" },
+      { id: "chest-supported-row", grp: "Back", name: "Chest Supported Row", equip: "Machine", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 25, vid: "Jeff Nippard chest supported row technique" },
+      { id: "cable-row", grp: "Back", name: "Seated Cable Row", equip: "Cable", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard seated cable row technique" },
+      OH_TRI,
+      { id: "cg-bench", grp: "Triceps", name: "Close-Grip Bench Press", equip: "B, hands shoulder-width (total kg)", sets: 3, repMin: 8, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard close grip bench press technique" },
+      { id: "cable-kickback", grp: "Triceps", name: "Cable Kickback", equip: "Cable, single arm (kg per arm)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 5, vid: "cable triceps kickback technique" },
+      ...DELTS,
+      ...ABS_A,
     ],
   },
   {
-    id: "upper", name: "Upper", sub: "Chest · Back · Shoulders · Arms",
+    id: "upper", name: "Upper Body", sub: "Chest · Back · Arms · Shoulders",
     exercises: [
-      { id: "smith-incline", name: "Smith Incline Press", equip: "Added plates total", repMin: 8, repMax: 12, inc: 2.5, rec: 15, vid: "Jeremy Ethier smith machine incline press technique" },
-      { id: "pulldown-close", name: "Close-Grip Pulldown", equip: "Machine, neutral grip", repMin: 10, repMax: 12, inc: 2.5, rec: 30, vid: "Renaissance Periodization close grip pulldown technique" },
-      { id: "db-shoulder", name: "DB Shoulder Press", equip: "Dumbbells (kg per DB), seated", repMin: 8, repMax: 12, inc: 2, rec: 10, vid: "Jeff Nippard dumbbell shoulder press technique" },
-      { id: "row-wide", name: "Cable Row (wide grip)", equip: "Cable", repMin: 10, repMax: 12, inc: 2.5, rec: 25, vid: "Jeff Nippard cable row technique" },
-      { id: "ez-curl-2", name: "EZ Bar Curl", equip: "Bar + plates (total kg)", repMin: 10, repMax: 12, inc: 2.5, rec: 15, vid: "Renaissance Periodization ez bar curl technique" },
-      { id: "oh-triceps", name: "Overhead Cable Extension", equip: "Cable, rope", repMin: 10, repMax: 15, inc: 2.5, rec: 10, vid: "Jeff Nippard overhead triceps extension technique" },
+      { id: "incline-bench-45", grp: "Chest", name: "45° Incline Bench Press", equip: "B, bench at 45° (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard incline barbell bench press technique" },
+      SEATED_FLY,
+      { id: "pullup", grp: "Back", name: "Pull-up", equip: "Bodyweight + added kg (0 = none). Can't get 6? Use the assisted machine", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 0, vid: "Jeff Nippard pull up technique" },
+      { id: "pendlay-deficit", grp: "Back", name: "Deficit Pendlay Row", equip: "B, standing on a plate (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "deficit pendlay row technique" },
+      { ...OH_TRI, grp: "Arms" },
+      { ...BAYESIAN, grp: "Arms" },
+      ...DELTS,
     ],
   },
   {
-    id: "lower", name: "Lower", sub: "Hamstrings · Glutes · Quads · Core",
+    id: "lower", name: "Lower Body", sub: "Quads · Hamstrings · Glutes · Calves · Abs",
     exercises: [
-      { id: "db-rdl", name: "DB Romanian Deadlift", equip: "Dumbbells (kg per DB), hinge at hips", repMin: 10, repMax: 12, inc: 2, rec: 12, vid: "Jeff Nippard Romanian deadlift technique" },
-      { id: "split-squat", name: "Bulgarian Split Squat", equip: "Dumbbells (kg per DB), per leg", repMin: 8, repMax: 10, inc: 2, rec: 8, vid: "Jeff Nippard bulgarian split squat technique" },
-      { id: "leg-ext-2", name: "Leg Extension", equip: "Machine", repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization leg extension technique" },
-      { id: "leg-curl-2", name: "Leg Curl", equip: "Machine", repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization seated leg curl technique" },
-      { id: "smith-calf", name: "Standing Calf Raise", equip: "Smith, added plates total", repMin: 15, repMax: 20, inc: 2.5, rec: 20, vid: "Jeff Nippard standing calf raise technique" },
-      { id: "cable-crunch", name: "Cable Crunch", equip: "Cable, kneeling", repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
+      ...LEGS_CORE,
+      { id: "squat", grp: "Squat + Glutes", name: "Squat", equip: "B on your back (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard barbell squat technique" },
+      HIP_THRUST,
+      { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
+      { id: "wood-chopper", grp: "Abs", name: "Cable Wood Chopper", equip: "Cable, high to low (kg), reps per side", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 7.5, vid: "cable wood chopper technique" },
+      { id: "russian-twist", grp: "Abs", name: "Russian Twist", equip: "Plate or DB held (kg), reps per side", sets: 2, repMin: 15, repMax: 20, inc: 2.5, rec: 5, vid: "russian twist technique" },
     ],
   },
 ];
 
-// Gym days: Mon, Tue, Wed, Fri, Sun. Cardio: Sat. Rest: Thu. (JS getDay: 0=Sun)
-const GYM_BY_DOW = { 1: "push", 2: "pull", 3: "legs", 5: "upper", 0: "lower" };
+// Gym days: Mon Chest, Tue Legs, Wed Back, Fri Upper, Sun Lower. Cardio: Sat. Rest: Thu. (JS getDay: 0=Sun)
+const GYM_BY_DOW = { 1: "chest", 2: "legs", 3: "back", 5: "upper", 0: "lower" };
 const CARDIO_DOW = 6; // Saturday: 1 hour jump rope
 const SA_NIGHTS = [1, 4]; // Monday & Thursday nights
 
 const WEEK_LAYOUT = [
-  ["Mon", "Push"], ["Tue", "Pull"], ["Wed", "Legs"], ["Thu", "Rest"], ["Fri", "Upper"], ["Sat", "Cardio (rope)"], ["Sun", "Lower"],
+  ["Mon", "Chest"], ["Tue", "Legs"], ["Wed", "Back"], ["Thu", "Rest"], ["Fri", "Upper Body"], ["Sat", "Jump rope 30m–1h"], ["Sun", "Lower Body"],
 ];
 
 // ---------------- DIET DATA ----------------
@@ -294,7 +320,7 @@ const DINNER_GUIDE = [
 
 const DIET_RULES = [
   "Weigh yourself every Sunday morning after the toilet, before food. Log it in Progress.",
-  "Saturday rope cardio burns ~500 kcal. Eat the bigger snack that day (2 PB toast + 300ml milk extra).",
+  "Saturday rope burns ~250–500 kcal (30–60 min). Eat the bigger snack that day (2 PB toast + 300ml milk extra).",
   "Scale not moving up after 2 weeks? Add 300ml whole milk + 1 spoon peanut butter daily (~300 kcal).",
   "Gaining faster than 0.5 kg/week? Cut dinner rice to ~120g dry.",
   "Carbs are the hardest number to hit. Don't shrink the rice portion, because it's most of dinner's carbs.",
@@ -361,11 +387,11 @@ function buildRoutine(dow) {
     steps.push({ id: "shower-am", time: t.shower, title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser" });
     steps.push({ id: "bfast", time: t.bfast, title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
     if (sat) {
-      steps.push({ id: "cardio", time: t.train, title: "Cardio: jump rope", sub: "1 hour · 3 min skip / 1 min rest rounds", info: [
-        "5 min easy skipping to warm up, then rounds of 3 min skipping + 1 min rest (about 12 rounds), then 5 min easy to finish.",
+      steps.push({ id: "cardio", time: t.train, title: "Cardio: jump rope", sub: "30 min – 1 hour · 3 min skip / 1 min rest rounds", info: [
+        "5 min easy skipping to warm up, then rounds of 3 min skipping + 1 min rest (5 rounds for 30 min, 12 for an hour), then a few min easy to finish.",
         "Small jumps on the balls of your feet, rope turned by the wrists, not the arms.",
         "Keep it moderate (you can still talk in short sentences). Tomorrow is Lower day, so don't wreck your legs.",
-        "An hour of rope burns roughly 500 kcal. That's why today's snack is bigger. Skip it and the cardio eats your gain.",
+        "Rope burns roughly 250 kcal per 30 min (~500 for an hour). That's why today's snack is bigger. Skip it and the cardio eats your gain.",
       ] });
     }
     if (gymId) steps.push({ id: "gym", time: t.train, title: `Gym: ${gymName} day`, sub: "2 hours · shower after" });
@@ -373,7 +399,7 @@ function buildRoutine(dow) {
     if (sat) {
       steps.push({ id: "snack", time: t.snack, title: "Snack: cardio day (bigger)", sub: `${SNACK.food} + 2 peanut butter toast + 300ml whole milk`, info: [
         "The usual banana + flapjack, plus 2 slices of toast with peanut butter and a 300ml glass of whole milk.",
-        "The extra is ~500 kcal and 20g protein, which covers what the rope burned.",
+        "The extra is ~500 kcal and 20g protein, which covers an hour of rope. Only did 30 min? Skip the milk.",
       ] });
     } else {
       steps.push({ id: "snack", time: t.snack, title: "Snack", sub: SNACK.food, info: SNACK.info });
@@ -416,7 +442,11 @@ const ytUrl = (q) => "https://www.youtube.com/results?search_query=" + encodeURI
 
 function adjustWeight(ex, weight, reps) {
   if (!reps || reps <= 0) return { next: weight, tag: null };
-  if (reps < ex.repMin) return { next: Math.max(0, +(weight - ex.inc).toFixed(1)), tag: "down" };
+  if (!ex.inc) return { next: weight, tag: "hold" };
+  if (reps < ex.repMin) {
+    const next = Math.max(0, +(weight - ex.inc).toFixed(1));
+    return next < weight ? { next, tag: "down" } : { next: weight, tag: "hold" };
+  }
   if (reps >= ex.repMax + 4) return { next: +(weight + 2 * ex.inc).toFixed(1), tag: "jump" };
   if (reps >= ex.repMax) return { next: +(weight + ex.inc).toFixed(1), tag: "up" };
   return { next: weight, tag: "hold" };
@@ -436,7 +466,7 @@ function migrateV2(parsed) {
 
 function App() {
   const [tab, setTab] = useState("day");
-  const [dayId, setDayId] = useState(GYM_BY_DOW[new Date().getDay()] || "push");
+  const [dayId, setDayId] = useState(GYM_BY_DOW[new Date().getDay()] || "chest");
   const [data, setData] = useState(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [draftW, setDraftW] = useState({});
@@ -690,37 +720,43 @@ function App() {
             <div className="howto-body">
               <p><b>▶ Technique buttons</b> open a YouTube tutorial for that exact exercise (Jeff Nippard / Renaissance Periodization / Athlean-X / Jeremy Ethier). Watch it once before your first time doing the movement.</p>
               <p><b>It suggests your weights.</b> Every exercise starts on a recommended kg. Marked "SUGG." until you've logged it once. Adjust with ± if it feels wrong on set 1.</p>
-              <p><b>Do 4 sets of every exercise.</b> Then log ONE number: the reps you got on your LAST set — the hardest one. Counter starts at 0 every session.</p>
+              <p><b>Do the sets shown on each card</b> (3, or 2 for abs). Then log ONE number: the reps you got on your LAST set — the hardest one. Counter starts at 0 every session.</p>
               <p><b>It adjusts.</b> Last set hits the top of the range → weight goes up. 4+ reps over → double jump. Under the bottom → weight comes down. In between → it holds and you chase reps.</p>
-              <p><b>Units:</b> dumbbell moves = kg per dumbbell. Smith machine = added plates only, don't count the bar.</p>
+              <p><b>Units:</b> DB = dumbbell, kg per dumbbell. B = barbell, total kg including the 20kg bar. Single-arm cable = kg per arm. Bodyweight moves just track reps.</p>
               <p><b>Rest</b> ~2 min on the first two exercises, 60–90s after. <b>Warm-up:</b> 5 min bike/rope + 1 light set of the first exercise per muscle. Dying by the last exercise? 3 sets on the final two is fine. A rep only counts if it's controlled.</p>
             </div>
           </details>
 
-          {day.exercises.map((ex) => {
+          {day.exercises.map((ex, i) => {
+            const newGrp = i === 0 || day.exercises[i - 1].grp !== ex.grp;
+            const bw = !ex.inc;
             const last = lastFor(ex.id);
             const reps = draftR[ex.id] || 0;
             const w = draftW[ex.id];
             const isSuggested = data.weights[ex.id] == null;
             return (
-              <div className="card" key={ex.id}>
+              <Fragment key={ex.id}>
+              {newGrp && <div className="grp-h">{ex.grp}</div>}
+              <div className="card">
                 <div className="card-top">
                   <div>
                     <div className="ex-name">{ex.name}</div>
-                    <div className="ex-meta">{ex.equip} · {SETS} × {ex.repMin}–{ex.repMax}</div>
+                    <div className="ex-meta">{ex.equip} · {ex.sets} × {ex.repMin}–{ex.repMax}</div>
                   </div>
                   <div className="chip-col">
-                    <div className="target">last set {ex.repMax}+ → +{ex.inc}kg</div>
+                    <div className="target">{bw ? `aim for ${ex.repMax} reps` : `last set ${ex.repMax}+ → +${ex.inc}kg`}</div>
                     <a className="tech" href={ytUrl(ex.vid)} target="_blank" rel="noreferrer">▶ Technique</a>
                   </div>
                 </div>
                 {last
-                  ? <div className="last">Last time: {last.weight}kg, final set × {last.reps} · {fmtDate(last.date)}</div>
-                  : <div className="last sugg">Suggested start — adjust with ± if it feels wrong on set 1</div>}
+                  ? <div className="last">Last time: {bw ? "" : `${last.weight}kg, `}final set × {last.reps} · {fmtDate(last.date)}</div>
+                  : <div className="last sugg">{bw ? "Bodyweight. Just log your last-set reps" : "Suggested start — adjust with ± if it feels wrong on set 1"}</div>}
                 <div className="w-row">
+                  {bw ? <div className="w-bw">Bodyweight</div> : <>
                   <button className="stp" onClick={() => bumpW(ex.id, -1, ex.inc)}>−</button>
                   <div className="w-num">{w}<span className="w-unit">kg</span>{isSuggested && <span className="sugg-tag">SUGG.</span>}</div>
                   <button className="stp" onClick={() => bumpW(ex.id, +1, ex.inc)}>+</button>
+                  </>}
                   <div className="rep-block">
                     <div className="rep-label">last set reps</div>
                     <div className="set">
@@ -731,6 +767,7 @@ function App() {
                   </div>
                 </div>
               </div>
+              </Fragment>
             );
           })}
 
