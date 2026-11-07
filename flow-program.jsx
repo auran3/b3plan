@@ -265,15 +265,16 @@ function buildRoutine(dow) {
     });
   }
 
-  const skinSub = saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Cleanser → moisturise on damp skin";
+  const face = saNight ? "SA cleanser 60 sec MAX → rinse → moisturiser" : "cleanser → moisturiser on damp skin";
   const bed = schoolTomorrow
-    ? { time: "21:15", out: "21:30", sleep: "10h" }
-    : { time: "23:45", out: "00:00", sleep: "11h" };
+    ? { time: "21:15", out: "21:30", sleep: "10h", wake: "07:30" }
+    : { time: "23:45", out: "00:00", sleep: "11h", wake: "11:00" };
   steps.push({
-    id: "bed", time: bed.time,
-    title: saNight ? "Skincare (SA night) → bed" : "Skincare → bed",
-    sub: `${skinSub} · lights out ${bed.out} = ${bed.sleep}`,
+    id: "skinpm", time: bed.time,
+    title: saNight ? "Night skincare (SA night)" : "Night skincare",
+    sub: `Face: ${face}\nLips: soft toothbrush 30 sec → HA serum → lip balm on top\nLashes + brows: peptide serum (16 weeks, or until you see growth)`,
   });
+  steps.push({ id: "bed", time: bed.out, title: "Lights out", sub: `Phone away · ${bed.sleep} till ${bed.wake}` });
 
   return steps;
 }
@@ -744,7 +745,7 @@ body{margin:0;}
 .step-title{font-family:'Barlow Condensed';font-size:20px;font-weight:600;letter-spacing:.02em;line-height:1.15;}
 .step-done .step-title{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--good);}
 .step-done .step-sub{text-decoration:line-through;text-decoration-color:var(--good);}
-.step-sub{font-size:12.5px;color:var(--mut);margin-top:2px;line-height:1.4;}
+.step-sub{font-size:12.5px;color:var(--mut);margin-top:2px;line-height:1.4;white-space:pre-line;}
 .info-btn{flex:0 0 26px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:#1F2630;color:var(--acc);font-size:13px;font-weight:800;font-style:italic;font-family:Georgia,serif;cursor:pointer;margin-top:3px;padding:0;}
 .info-on{background:var(--acc);color:#14100C;border-color:var(--acc);}
 .info-panel{background:#12161B;border:1px solid #2C3642;border-left:3px solid var(--acc);border-radius:10px;padding:10px 12px;margin-top:9px;cursor:default;}
