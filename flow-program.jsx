@@ -178,12 +178,6 @@ const SKIN_PM_SA_INFO = [
 // ---------------- DAILY ROUTINE BUILDER ----------------
 const DOW_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const GYM_INFO = [
-  "Warm-up: 5 min bike or jump rope + 1 light set of the first exercise per muscle.",
-  "4 sets each exercise. Rest ~2 min on the first two exercises, 60–90s after.",
-  "Log the reps of your final set in the Lift tab and hit Finish Workout. The app sets next session's weights.",
-];
-
 function buildRoutine(dow) {
   const schoolDay = dow >= 1 && dow <= 5;
   const schoolTomorrow = dow >= 0 && dow <= 4;
@@ -195,12 +189,12 @@ function buildRoutine(dow) {
 
   if (schoolDay) {
     steps.push({ id: "wake", time: "07:30", title: "Wake up", sub: "Glass of water" });
-    steps.push({ id: "shower-am", time: "07:35", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
+    steps.push({ id: "shower-am", time: "07:35", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser" });
     steps.push({ id: "bfast", time: "07:50", title: "Breakfast", sub: BREAKFAST.food, info: BREAKFAST.info });
     steps.push({ id: "leave", time: "08:05", title: "Leave for school", sub: gymId ? "Take lunch, snack and gym kit · school 08:30" : "Take lunch + snack · school 08:30" });
     steps.push({ id: "lunch", time: "LUNCH BREAK", title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
     if (gymId) {
-      steps.push({ id: "gym", time: "15:40 – 17:00", title: `Gym: ${gymName} day`, sub: `Snack on the way: ${SNACK.food.toLowerCase()}`, info: [...SNACK.info, ...GYM_INFO] });
+      steps.push({ id: "gym", time: "15:40 – 17:00", title: `Gym: ${gymName} day`, sub: `Snack on the way: ${SNACK.food.toLowerCase()}` });
       steps.push({ id: "shower-pm", time: "17:30", title: "Shower", sub: "Home by 17:15, straight in" });
     } else {
       steps.push({ id: "snack", time: "15:40", title: "Snack: rest day", sub: SNACK.food, info: ["Still eat it on rest days, because muscle is built on rest days and needs the calories.", ...SNACK.info] });
@@ -213,7 +207,7 @@ function buildRoutine(dow) {
       : { wake: "11:00", shower: "11:10", bfast: "11:30", train: "13:00 – 15:00", lunch: "15:30", snack: "17:30" };
     steps.push({ id: "wake", time: t.wake, title: "Wake up", sub: "Lights out was 00:00 = 11h · glass of water" });
     if (!sat) steps.push({ id: "weigh", time: "11:05", title: "Sunday weigh-in", sub: "After the toilet, before food. Log it in Progress, then tap Backup" });
-    steps.push({ id: "shower-am", time: t.shower, title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
+    steps.push({ id: "shower-am", time: t.shower, title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser" });
     steps.push({ id: "bfast", time: t.bfast, title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
     if (sat) {
       steps.push({ id: "cardio", time: t.train, title: "Cardio: jump rope", sub: "1 hour · 3 min skip / 1 min rest rounds", info: [
@@ -223,7 +217,7 @@ function buildRoutine(dow) {
         "An hour of rope burns roughly 500 kcal. That's why today's snack is bigger. Skip it and the cardio eats your gain.",
       ] });
     }
-    if (gymId) steps.push({ id: "gym", time: t.train, title: `Gym: ${gymName} day`, sub: "2 hours · shower after", info: [...GYM_INFO, "You've got 2 hours, so take full rests. No need to rush."] });
+    if (gymId) steps.push({ id: "gym", time: t.train, title: `Gym: ${gymName} day`, sub: "2 hours · shower after" });
     steps.push({ id: "lunch", time: t.lunch, title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
     if (sat) {
       steps.push({ id: "snack", time: t.snack, title: "Snack: cardio day (bigger)", sub: `${SNACK.food} + 2 peanut butter toast + 300ml whole milk`, info: [
@@ -247,20 +241,13 @@ function buildRoutine(dow) {
   }
 
   const skinSub = saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Cleanser → moisturise on damp skin";
-  const bed = dow === 0
-    ? { time: "21:15", out: "21:30", sleep: "10h", note: "Sunday: lights out 21:30 gives 10h before Monday's 07:30. Can't sleep yet? Lie down anyway with the phone away. Latest is 22:30 (9h)." }
-    : schoolTomorrow
-      ? { time: "21:15", out: "21:30", sleep: "10h", note: "Sleep: lights out 21:30 gives 10h before 07:30. Latest is 22:30 (9h)." }
-      : { time: "23:45", out: "00:00", sleep: "11h", note: dow === 5 ? "Lights out 00:00 → wake 11:00 = 11h." : "Lights out 00:00 → wake 11:00 = 11h. Not later, because Sunday is an early night for school." };
+  const bed = schoolTomorrow
+    ? { time: "21:15", out: "21:30", sleep: "10h" }
+    : { time: "23:45", out: "00:00", sleep: "11h" };
   steps.push({
     id: "bed", time: bed.time,
     title: saNight ? "Skincare (SA night) → bed" : "Skincare → bed",
     sub: `${skinSub} · lights out ${bed.out} = ${bed.sleep}`,
-    info: [
-      ...(saNight ? SKIN_PM_SA_INFO : SKIN_PM_NORMAL_INFO),
-      bed.note,
-      "Phone away before lights out. Sleep is when growth and muscle repair actually happen.",
-    ],
   });
 
   return steps;
