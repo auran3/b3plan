@@ -62,12 +62,13 @@ const PROGRAM = [
   },
 ];
 
-// Gym days: Mon, Tue, Wed, Fri, Sat. Rest: Thu, Sun. (JS getDay: 0=Sun)
-const GYM_BY_DOW = { 1: "push", 2: "pull", 3: "legs", 5: "upper", 6: "lower" };
+// Gym days: Mon, Tue, Wed, Fri, Sun. Cardio: Sat. Rest: Thu. (JS getDay: 0=Sun)
+const GYM_BY_DOW = { 1: "push", 2: "pull", 3: "legs", 5: "upper", 0: "lower" };
+const CARDIO_DOW = 6; // Saturday: 1 hour jump rope
 const SA_NIGHTS = [1, 4]; // Monday & Thursday nights
 
 const WEEK_LAYOUT = [
-  ["Mon", "Push"], ["Tue", "Pull"], ["Wed", "Legs"], ["Thu", "Rest"], ["Fri", "Upper"], ["Sat", "Lower"], ["Sun", "Rest"],
+  ["Mon", "Push"], ["Tue", "Pull"], ["Wed", "Legs"], ["Thu", "Rest"], ["Fri", "Upper"], ["Sat", "Cardio (rope)"], ["Sun", "Lower"],
 ];
 
 // ---------------- DIET DATA ----------------
@@ -141,7 +142,8 @@ const DINNER_GUIDE = [
 ];
 
 const DIET_RULES = [
-  "Weigh yourself every Sat morning after the toilet, before food. Log it in Progress.",
+  "Weigh yourself every Sunday morning after the toilet, before food. Log it in Progress.",
+  "Saturday rope cardio burns ~500 kcal. Eat the bigger snack that day (2 PB toast + 300ml milk extra).",
   "Scale not moving up after 2 weeks? Add 300ml whole milk + 1 spoon peanut butter daily (~300 kcal).",
   "Gaining faster than 0.5 kg/week? Cut dinner rice to ~120g dry.",
   "Carbs are the hardest number to hit. Don't shrink the rice portion, because it's most of dinner's carbs.",
@@ -204,16 +206,36 @@ function buildRoutine(dow) {
       steps.push({ id: "snack", time: "15:40", title: "Snack: rest day", sub: SNACK.food, info: ["Still eat it on rest days, because muscle is built on rest days and needs the calories.", ...SNACK.info] });
     }
   } else {
-    steps.push({ id: "wake", time: "09:00", title: "Wake up", sub: "Lie-in, but still inside 9–11h" });
-    if (dow === 6) steps.push({ id: "weigh", time: "09:05", title: "Saturday weigh-in", sub: "After the toilet, before food. Log it in Progress, then tap Backup" });
-    steps.push({ id: "shower-am", time: "09:10", title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
-    steps.push({ id: "bfast", time: "09:30", title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
-    if (gymId) steps.push({ id: "gym", time: "12:00", title: `Gym: ${gymName} day`, sub: "Shower after", info: GYM_INFO });
-    steps.push({ id: "lunch", time: "13:30", title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
-    steps.push({ id: "snack", time: "16:00", title: "Snack", sub: SNACK.food, info: SNACK.info });
+    const sat = dow === 6;
+    // Sat: lights out 01:00 Fri night → wake 11:30. Sun: lights out 01:00 Sat night → wake 11:00 (earlier, for the early Sunday night).
+    const t = sat
+      ? { wake: "11:30", shower: "11:40", bfast: "12:00", train: "13:30 – 14:30", lunch: "15:00", snack: "17:30" }
+      : { wake: "11:00", shower: "11:10", bfast: "11:30", train: "13:00 – 15:00", lunch: "15:30", snack: "17:30" };
+    steps.push({ id: "wake", time: t.wake, title: "Wake up", sub: sat ? "Lights out was 01:00 = 10.5h · glass of water" : "Lights out was 01:00 = 10h · glass of water" });
+    if (!sat) steps.push({ id: "weigh", time: "11:05", title: "Sunday weigh-in", sub: "After the toilet, before food. Log it in Progress, then tap Backup" });
+    steps.push({ id: "shower-am", time: t.shower, title: "Shower + skincare", sub: "Splash face → pat dry → SPF moisturiser", info: SKIN_AM_INFO });
+    steps.push({ id: "bfast", time: t.bfast, title: "Breakfast", sub: "Same oats, made fresh (microwave 2 min), or the eggs + toast swap", info: BREAKFAST.info });
+    if (sat) {
+      steps.push({ id: "cardio", time: t.train, title: "Cardio: jump rope", sub: "1 hour · 3 min skip / 1 min rest rounds", info: [
+        "5 min easy skipping to warm up, then rounds of 3 min skipping + 1 min rest (about 12 rounds), then 5 min easy to finish.",
+        "Small jumps on the balls of your feet, rope turned by the wrists, not the arms.",
+        "Keep it moderate (you can still talk in short sentences). Tomorrow is Lower day, so don't wreck your legs.",
+        "An hour of rope burns roughly 500 kcal. That's why today's snack is bigger. Skip it and the cardio eats your gain.",
+      ] });
+    }
+    if (gymId) steps.push({ id: "gym", time: t.train, title: `Gym: ${gymName} day`, sub: "2 hours · shower after", info: [...GYM_INFO, "You've got 2 hours, so take full rests. No need to rush."] });
+    steps.push({ id: "lunch", time: t.lunch, title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
+    if (sat) {
+      steps.push({ id: "snack", time: t.snack, title: "Snack: cardio day (bigger)", sub: `${SNACK.food} + 2 peanut butter toast + 300ml whole milk`, info: [
+        "The usual banana + flapjack, plus 2 slices of toast with peanut butter and a 300ml glass of whole milk.",
+        "The extra is ~500 kcal and 20g protein, which covers what the rope burned.",
+      ] });
+    } else {
+      steps.push({ id: "snack", time: t.snack, title: "Snack", sub: SNACK.food, info: SNACK.info });
+    }
   }
 
-  steps.push({ id: "dinner", time: "18:30", title: "Dinner", sub: `${DINNER.food} · ${DINNER.macros}`, info: DINNER.info });
+  steps.push({ id: "dinner", time: dow === 6 ? "20:00" : dow === 0 ? "19:00" : "18:30", title: "Dinner", sub: `${DINNER.food} · ${DINNER.macros}`, info: DINNER.info });
 
   if (schoolTomorrow) {
     const cook = dow === 0 || dow === 3;
@@ -225,13 +247,18 @@ function buildRoutine(dow) {
   }
 
   const skinSub = saNight ? "SA cleanser 60 sec MAX → rinse → moisturise" : "Cleanser → moisturise on damp skin";
+  const bed = dow === 0
+    ? { time: "22:15", out: "22:30", sleep: "9h", note: "Sunday: you woke at 11:00, so 21:30 is too early to fall asleep. 22:30 still gives 9h before Monday's 07:30. Don't go later." }
+    : schoolTomorrow
+      ? { time: "21:15", out: "21:30", sleep: "10h", note: "Sleep: lights out 21:30 gives 10h before 07:30. Latest is 22:30 (9h)." }
+      : { time: "00:45", out: "01:00", sleep: dow === 5 ? "10.5h" : "10h", note: dow === 5 ? "Lights out 01:00 → wake 11:30 = 10.5h." : "Lights out 01:00 → wake 11:00 = 10h. Not later: Sunday has to be an early night for school." };
   steps.push({
-    id: "bed", time: schoolTomorrow ? "21:15" : "22:15",
+    id: "bed", time: bed.time,
     title: saNight ? "Skincare (SA night) → bed" : "Skincare → bed",
-    sub: schoolTomorrow ? `${skinSub} · lights out 21:30 = 10h` : `${skinSub} · lights out 22:30 = 10.5h`,
+    sub: `${skinSub} · lights out ${bed.out} = ${bed.sleep}`,
     info: [
       ...(saNight ? SKIN_PM_SA_INFO : SKIN_PM_NORMAL_INFO),
-      schoolTomorrow ? "Sleep: lights out 21:30 gives 10h before 07:30. Latest is 22:30 (9h)." : "Sleep: lights out 22:30 gives 10.5h before 09:00.",
+      bed.note,
       "Phone away before lights out. Sleep is when growth and muscle repair actually happen.",
     ],
   });
@@ -443,7 +470,7 @@ export default function App() {
 
   const Spark = () => {
     const pts = data.bodyweight;
-    if (pts.length < 2) return <div className="spark-empty">Log your weight every Saturday — the graph builds itself. Goal: 65 kg.</div>;
+    if (pts.length < 2) return <div className="spark-empty">Log your weight every Sunday — the graph builds itself. Goal: 65 kg.</div>;
     const W = 300, H = 90, pad = 8;
     const kgs = pts.map((p) => p.kg);
     const min = Math.min(...kgs, 65) - 1, max = Math.max(...kgs, 65) + 1;
@@ -478,7 +505,7 @@ export default function App() {
           <div className="day-banner">
             <div>
               <div className="day-name">{DOW_NAMES[dow]}</div>
-              <div className="day-type">{GYM_BY_DOW[dow] ? `${PROGRAM.find((p) => p.id === GYM_BY_DOW[dow]).name} day` : "Rest day"}{SA_NIGHTS.includes(dow) ? " · SA skincare night" : ""}</div>
+              <div className="day-type">{GYM_BY_DOW[dow] ? `${PROGRAM.find((p) => p.id === GYM_BY_DOW[dow]).name} day` : dow === CARDIO_DOW ? "Cardio day" : "Rest day"}{SA_NIGHTS.includes(dow) ? " · SA skincare night" : ""}</div>
             </div>
             <div className="day-count">{doneCount}/{routine.length}</div>
           </div>
@@ -642,7 +669,7 @@ export default function App() {
               <button className="bk-btn bk-sec" onClick={() => fileRef.current && fileRef.current.click()}>Restore</button>
               <input ref={fileRef} type="file" accept=".json,application/json" onChange={restore} style={{ display: "none" }} />
             </div>
-            <div className="bk-note">Your data lives on this phone only. Back up every Saturday after you weigh in, and save the file to Files / iCloud Drive or email it to yourself. Restore puts it back on a new phone or after data gets wiped.</div>
+            <div className="bk-note">Your data lives on this phone only. Back up every Sunday after you weigh in, and save the file to Files / iCloud Drive or email it to yourself. Restore puts it back on a new phone or after data gets wiped.</div>
           </div>
           <div className="sec-h">SESSIONS · {data.sessions.length} LOGGED</div>
           {data.sessions.length === 0 && <div className="card empty-c">No workouts saved yet. Finish your first session in the Lift tab.</div>}
