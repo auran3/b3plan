@@ -4,38 +4,38 @@ import { useState, useEffect, useRef, Fragment } from "react";
 // rec = recommended starting weight (kg). The app adjusts it from your logged reps.
 // DB = dumbbell, kg PER dumbbell. B = barbell, TOTAL kg including the 20kg bar.
 // Cable single-arm moves = kg per arm. inc 0 = bodyweight only (no weight to track).
-// Sets are per exercise. You log the reps of your LAST set only.
+// Reps: 7–10 for everything, 10–20 for abs. Sets are per exercise. You log the reps of your LAST set only.
 // The same exercise id on two days shares its weight + history (e.g. Leg Extension on Legs and Lower).
 const ABS_A = [
-  { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
-  { id: "straight-leg-raise", grp: "Abs", name: "Straight Leg Raise", equip: "Bodyweight, lying or hanging", sets: 2, repMin: 10, repMax: 15, inc: 0, rec: 0, vid: "straight leg raise abs technique" },
-  { id: "side-bend", grp: "Abs", name: "Side Bend", equip: "DB in one hand (kg), reps per side", sets: 2, repMin: 12, repMax: 15, inc: 2, rec: 12, vid: "dumbbell side bend technique" },
+  { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 10, repMax: 20, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
+  { id: "straight-leg-raise", grp: "Abs", name: "Straight Leg Raise", equip: "Bodyweight, lying or hanging", sets: 2, repMin: 10, repMax: 20, inc: 0, rec: 0, vid: "straight leg raise abs technique" },
+  { id: "side-bend", grp: "Abs", name: "Side Bend", equip: "DB in one hand (kg), reps per side", sets: 2, repMin: 10, repMax: 20, inc: 2, rec: 12, vid: "dumbbell side bend technique" },
 ];
 const DELTS = [
-  { id: "cable-lat-raise", grp: "Shoulders", name: "Cable Lateral Raise", equip: "Cable, low pulley, single arm (kg per arm)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 2.5, vid: "Jeff Nippard cable lateral raise technique" },
-  { id: "cable-y-raise", grp: "Shoulders", name: "Cable Y Raise", equip: "Cables crossed, low pulleys (kg per side)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 2.5, vid: "cable Y raise technique" },
+  { id: "cable-lat-raise", grp: "Shoulders", name: "Cable Lateral Raise", equip: "Cable, low pulley, single arm (kg per arm)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 2.5, vid: "Jeff Nippard cable lateral raise technique" },
+  { id: "cable-y-raise", grp: "Shoulders", name: "Cable Y Raise", equip: "Cables crossed, low pulleys (kg per side)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 2.5, vid: "cable Y raise technique" },
 ];
-const SEATED_FLY = { id: "seated-fly", grp: "Chest", name: "Seated Chest Fly", equip: "Machine (pec deck)", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 20, vid: "Renaissance Periodization pec deck fly technique" };
-const BAYESIAN = { id: "bayesian-curl", grp: "Biceps", name: "Cable Bayesian Curl", equip: "Cable behind you, single arm (kg per arm)", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 5, vid: "Jeff Nippard bayesian cable curl technique" };
-const OH_TRI = { id: "oh-triceps", grp: "Triceps", name: "Cable Overhead Triceps Extension", equip: "Cable, rope", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 10, vid: "Jeff Nippard overhead cable triceps extension technique" };
+const SEATED_FLY = { id: "seated-fly", grp: "Chest", name: "Seated Chest Fly", equip: "Machine (pec deck)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 20, vid: "Renaissance Periodization pec deck fly technique" };
+const BAYESIAN = { id: "bayesian-curl", grp: "Biceps", name: "Cable Bayesian Curl", equip: "Cable behind you, single arm (kg per arm)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 5, vid: "Jeff Nippard bayesian cable curl technique" };
+const OH_TRI = { id: "oh-triceps", grp: "Triceps", name: "Cable Overhead Triceps Extension", equip: "Cable, rope", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 10, vid: "Jeff Nippard overhead cable triceps extension technique" };
 const LEGS_CORE = [
-  { id: "leg-ext", grp: "Quads + Hamstrings", name: "Leg Extension", equip: "Machine", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization leg extension technique" },
-  { id: "leg-curl", grp: "Quads + Hamstrings", name: "Leg Curl", equip: "Machine", sets: 3, repMin: 10, repMax: 15, inc: 2.5, rec: 25, vid: "Renaissance Periodization seated leg curl technique" },
-  { id: "rdl", grp: "Hamstrings + Calves", name: "Romanian Deadlift", equip: "B (total kg), hinge at the hips", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard Romanian deadlift technique" },
-  { id: "calf-raise", grp: "Hamstrings + Calves", name: "Calf Raise", equip: "Machine, full stretch at the bottom", sets: 3, repMin: 12, repMax: 20, inc: 5, rec: 40, vid: "Jeff Nippard calf raise technique" },
+  { id: "leg-ext", grp: "Quads + Hamstrings", name: "Leg Extension", equip: "Machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 25, vid: "Renaissance Periodization leg extension technique" },
+  { id: "leg-curl", grp: "Quads + Hamstrings", name: "Leg Curl", equip: "Machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 25, vid: "Renaissance Periodization seated leg curl technique" },
+  { id: "rdl", grp: "Hamstrings + Calves", name: "Romanian Deadlift", equip: "B (total kg), hinge at the hips", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard Romanian deadlift technique" },
+  { id: "calf-raise", grp: "Hamstrings + Calves", name: "Calf Raise", equip: "Machine, full stretch at the bottom", sets: 3, repMin: 7, repMax: 10, inc: 5, rec: 40, vid: "Jeff Nippard calf raise technique" },
 ];
-const HIP_THRUST = { id: "hip-thrust", grp: "Squat + Glutes", name: "Hip Thrust", equip: "B across hips, back on a bench (total kg)", sets: 3, repMin: 10, repMax: 12, inc: 5, rec: 40, vid: "Jeff Nippard barbell hip thrust technique" };
+const HIP_THRUST = { id: "hip-thrust", grp: "Squat + Glutes", name: "Hip Thrust", equip: "B across hips, back on a bench (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 5, rec: 40, vid: "Jeff Nippard barbell hip thrust technique" };
 
 const PROGRAM = [
   {
     id: "chest", name: "Chest", sub: "Chest · Biceps · Shoulders · Abs",
     exercises: [
-      { id: "incline-db-15", grp: "Chest", name: "15° Incline DB Press", equip: "DB (kg per DB), bench at 15°", sets: 3, repMin: 8, repMax: 12, inc: 2, rec: 12, vid: "Jeff Nippard low incline dumbbell press technique" },
+      { id: "incline-db-15", grp: "Chest", name: "15° Incline DB Press", equip: "DB (kg per DB), bench at 15°", sets: 3, repMin: 7, repMax: 10, inc: 2, rec: 12, vid: "Jeff Nippard low incline dumbbell press technique" },
       SEATED_FLY,
-      { id: "chest-press", grp: "Chest", name: "Chest Press", equip: "Machine", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 20, vid: "Renaissance Periodization machine chest press technique" },
+      { id: "chest-press", grp: "Chest", name: "Chest Press", equip: "Machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 20, vid: "Renaissance Periodization machine chest press technique" },
       BAYESIAN,
-      { id: "db-preacher", grp: "Biceps", name: "DB Preacher Curl", equip: "DB (kg per DB), preacher bench", sets: 3, repMin: 10, repMax: 12, inc: 2, rec: 6, vid: "dumbbell preacher curl technique" },
-      { id: "db-hammer-preacher", grp: "Biceps", name: "DB Hammer Preacher Curl", equip: "DB (kg per DB), preacher bench, thumbs up", sets: 3, repMin: 10, repMax: 12, inc: 2, rec: 6, vid: "dumbbell hammer preacher curl technique" },
+      { id: "db-preacher", grp: "Biceps", name: "DB Preacher Curl", equip: "DB (kg per DB), preacher bench", sets: 3, repMin: 7, repMax: 10, inc: 2, rec: 6, vid: "dumbbell preacher curl technique" },
+      { id: "db-hammer-preacher", grp: "Biceps", name: "DB Hammer Preacher Curl", equip: "DB (kg per DB), preacher bench, thumbs up", sets: 3, repMin: 7, repMax: 10, inc: 2, rec: 6, vid: "dumbbell hammer preacher curl technique" },
       ...DELTS,
       ...ABS_A,
     ],
@@ -44,19 +44,19 @@ const PROGRAM = [
     id: "legs", name: "Legs", sub: "Quads · Hamstrings · Calves · Glutes",
     exercises: [
       ...LEGS_CORE,
-      { id: "bench-squat", grp: "Squat + Glutes", name: "Bench Squat", equip: "B on your back, sit down to a bench (total kg)", sets: 3, repMin: 8, repMax: 10, inc: 2.5, rec: 30, vid: "box squat technique" },
+      { id: "bench-squat", grp: "Squat + Glutes", name: "Bench Squat", equip: "B on your back, sit down to a bench (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "box squat technique" },
       HIP_THRUST,
     ],
   },
   {
     id: "back", name: "Back", sub: "Back · Triceps · Shoulders · Abs",
     exercises: [
-      { id: "meadows-row", grp: "Back", name: "Meadows Row", equip: "B in a landmine corner (kg of plates on the bar)", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 10, vid: "Jeff Nippard meadows row technique" },
-      { id: "chest-supported-row", grp: "Back", name: "Chest Supported Row", equip: "Machine", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 25, vid: "Jeff Nippard chest supported row technique" },
-      { id: "cable-row", grp: "Back", name: "Seated Cable Row", equip: "Cable", sets: 3, repMin: 8, repMax: 12, inc: 2.5, rec: 30, vid: "Jeff Nippard seated cable row technique" },
+      { id: "meadows-row", grp: "Back", name: "Meadows Row", equip: "B in a landmine corner (kg of plates on the bar)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 10, vid: "Jeff Nippard meadows row technique" },
+      { id: "chest-supported-row", grp: "Back", name: "Chest Supported Row", equip: "Machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 25, vid: "Jeff Nippard chest supported row technique" },
+      { id: "cable-row", grp: "Back", name: "Seated Cable Row", equip: "Cable", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard seated cable row technique" },
       OH_TRI,
-      { id: "cg-bench", grp: "Triceps", name: "Close-Grip Bench Press", equip: "B, hands shoulder-width (total kg)", sets: 3, repMin: 8, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard close grip bench press technique" },
-      { id: "cable-kickback", grp: "Triceps", name: "Cable Kickback", equip: "Cable, single arm (kg per arm)", sets: 3, repMin: 12, repMax: 15, inc: 2.5, rec: 5, vid: "cable triceps kickback technique" },
+      { id: "cg-bench", grp: "Triceps", name: "Close-Grip Bench Press", equip: "B, hands shoulder-width (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard close grip bench press technique" },
+      { id: "cable-kickback", grp: "Triceps", name: "Cable Kickback", equip: "Cable, single arm (kg per arm)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 5, vid: "cable triceps kickback technique" },
       ...DELTS,
       ...ABS_A,
     ],
@@ -64,10 +64,10 @@ const PROGRAM = [
   {
     id: "upper", name: "Upper Body", sub: "Chest · Back · Arms · Shoulders",
     exercises: [
-      { id: "incline-bench-45", grp: "Chest", name: "45° Incline Bench Press", equip: "B, bench at 45° (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard incline barbell bench press technique" },
+      { id: "incline-bench-45", grp: "Chest", name: "45° Incline Bench Press", equip: "B, bench at 45° (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard incline barbell bench press technique" },
       SEATED_FLY,
-      { id: "pullup", grp: "Back", name: "Pull-up", equip: "Bodyweight + added kg (0 = none). Can't get 6? Use the assisted machine", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 0, vid: "Jeff Nippard pull up technique" },
-      { id: "pendlay-deficit", grp: "Back", name: "Deficit Pendlay Row", equip: "B, standing on a plate (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "deficit pendlay row technique" },
+      { id: "pullup", grp: "Back", name: "Pull-up", equip: "Bodyweight + added kg (0 = none). Can't get 7? Use the assisted machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 0, vid: "Jeff Nippard pull up technique" },
+      { id: "pendlay-deficit", grp: "Back", name: "Deficit Pendlay Row", equip: "B, standing on a plate (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "deficit pendlay row technique" },
       { ...OH_TRI, grp: "Arms" },
       { ...BAYESIAN, grp: "Arms" },
       ...DELTS,
@@ -77,11 +77,11 @@ const PROGRAM = [
     id: "lower", name: "Lower Body", sub: "Quads · Hamstrings · Glutes · Calves · Abs",
     exercises: [
       ...LEGS_CORE,
-      { id: "squat", grp: "Squat + Glutes", name: "Squat", equip: "B on your back (total kg)", sets: 3, repMin: 6, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard barbell squat technique" },
+      { id: "squat", grp: "Squat + Glutes", name: "Squat", equip: "B on your back (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "Jeff Nippard barbell squat technique" },
       HIP_THRUST,
-      { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
-      { id: "wood-chopper", grp: "Abs", name: "Cable Wood Chopper", equip: "Cable, high to low (kg), reps per side", sets: 2, repMin: 12, repMax: 15, inc: 2.5, rec: 7.5, vid: "cable wood chopper technique" },
-      { id: "russian-twist", grp: "Abs", name: "Russian Twist", equip: "Plate or DB held (kg), reps per side", sets: 2, repMin: 15, repMax: 20, inc: 2.5, rec: 5, vid: "russian twist technique" },
+      { id: "cable-crunch", grp: "Abs", name: "Cable Crunch", equip: "Cable, kneeling", sets: 2, repMin: 10, repMax: 20, inc: 2.5, rec: 25, vid: "Jeff Nippard cable crunch technique" },
+      { id: "wood-chopper", grp: "Abs", name: "Cable Wood Chopper", equip: "Cable, high to low (kg), reps per side", sets: 2, repMin: 10, repMax: 20, inc: 2.5, rec: 7.5, vid: "cable wood chopper technique" },
+      { id: "russian-twist", grp: "Abs", name: "Russian Twist", equip: "Plate or DB held (kg), reps per side", sets: 2, repMin: 10, repMax: 20, inc: 2.5, rec: 5, vid: "russian twist technique" },
     ],
   },
 ];
