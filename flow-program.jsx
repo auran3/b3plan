@@ -68,6 +68,7 @@ const PROGRAM = [
       SEATED_FLY,
       { id: "pullup", grp: "Back", name: "Pull-up", equip: "Bodyweight + added kg (0 = none). Can't get 7? Use the assisted machine", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 0, vid: "Jeff Nippard pull up technique" },
       { id: "pendlay-deficit", grp: "Back", name: "Deficit Pendlay Row", equip: "B, standing on a plate (total kg)", sets: 3, repMin: 7, repMax: 10, inc: 2.5, rec: 30, vid: "deficit pendlay row technique" },
+      { id: "bb-shrug", grp: "Back", name: "B Shrug", equip: "B, hands just outside hips (total kg), pause at the top", sets: 3, repMin: 7, repMax: 10, inc: 5, rec: 40, vid: "Jeff Nippard barbell shrug technique" },
       { ...OH_TRI, grp: "Arms" },
       { ...BAYESIAN, grp: "Arms" },
       ...DELTS,
