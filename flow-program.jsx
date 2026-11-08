@@ -98,7 +98,7 @@ const WEEK_LAYOUT = [
 
 // ---------------- DIET DATA ----------------
 // Daily target: ~3000 kcal · ~110g protein · ~85g fat · ~420g carbs.
-// Breakfast + lunch + snack are fixed (~2040 kcal, 305g carbs). Dinner is your call and fills the rest.
+// Breakfast + lunch + snack are fixed (~2060 kcal, 318g carbs). Dinner is your call and fills the rest.
 const DIET_TARGETS = [
   { label: "Calories", value: "~3,000", note: "kcal / day" },
   { label: "Protein", value: "~110 g", note: "some at every meal" },
@@ -127,16 +127,16 @@ const LUNCH = {
     "+ 1 apple + 250ml orange juice (a carton is fine).",
     "~870 kcal · 49g protein · 20g fat · 120g carbs. This is about half your day's protein, so don't skip it.",
     "Chicken: cook a batch on Sunday (for Mon–Wed) and Wednesday (for Thu–Fri). Cooked chicken keeps ~3 days in the fridge. Pack it with an ice pack or a frozen drink.",
-    "Buying lunch instead? A chicken wrap or sandwich + juice + fruit or a flapjack. Skip crisps-only meal deals because they have no protein.",
+    "Buying lunch instead? A chicken wrap or sandwich + juice + fruit or a cereal bar. Skip crisps-only meal deals because they have no protein.",
   ],
 };
 
 const SNACK = {
-  food: "Banana + flapjack (~60g)",
-  macros: "~375 kcal · 4g P · 12g F · 63g C",
+  food: "Banana + jam sandwich (2 slices, butter + jam)",
+  macros: "~395 kcal · 8g P · 8g F · 76g C",
   info: [
-    "Banana + a ~60g flapjack: ~375 kcal, 63g carbs. Quick fuel straight after school.",
-    "Swap: 2 cereal bars + banana, or a bagel with jam.",
+    "Banana + a jam sandwich (2 slices of bread, thin butter, jam): ~395 kcal, 76g carbs. Quick fuel straight after school. Make it in the morning or the night before.",
+    "No jam? Use honey. No bread? 2 bananas + a glass of milk."
   ],
 };
 
@@ -148,7 +148,7 @@ const DINNER = {
     "Ribeye night (3× a week): one ~200g raw ribeye. ≈ 37g protein, 44g fat. No extra oil needed.",
     "Other nights: ~150–200g chicken thigh, mince, etc., cooked in 1 tbsp olive oil or butter.",
     "Not rice? ~150g dry pasta, or ~600g potatoes (about 3 medium).",
-    "Why so much carbs: breakfast + lunch + snack give ~305g, and dinner brings the last ~115g to reach 420g.",
+    "Why so much carbs: breakfast + lunch + snack give ~318g, and dinner brings the last ~105–120g to reach 420g.",
   ],
 };
 
@@ -163,12 +163,12 @@ const DINNER_GUIDE = [
   ["Carbs", "~150g dry rice (≈ 450g cooked). Or 150g dry pasta / ~600g potatoes"],
   ["Meat", "~150–200g chicken thigh, mince, etc. + 1 tbsp olive oil or butter"],
   ["Steak", "Ribeye 3× a week: ~200g raw ≈ 37g P, 44g F. Skip the oil those nights"],
-  ["Total", "Normal day ≈ 2,900 kcal · 123g P · 75g F · 423g C. Ribeye day ≈ 3,130 kcal · 127g P · 98g F · 423g C"],
+  ["Total", "Normal day ≈ 2,930 kcal · 127g P · 71g F · 436g C. Ribeye day ≈ 3,150 kcal · 131g P · 94g F · 436g C"],
 ];
 
 const DIET_RULES = [
   "Weigh yourself every Sunday morning after the toilet, before food. Log it in Progress.",
-  "Saturday rope burns ~250–500 kcal (30–60 min). Eat the bigger snack that day (2 PB toast + 300ml milk extra).",
+  "Saturday rope burns ~250–500 kcal (30–60 min). Eat the bigger snack that day (peanut butter in the sandwich + 300ml milk).",
   "Scale not moving up after 2 weeks? Add 300ml whole milk + 1 spoon peanut butter daily (~300 kcal).",
   "Gaining faster than 0.5 kg/week? Cut dinner rice to ~120g dry.",
   "Carbs are the hardest number to hit. Don't shrink the rice portion, because it's most of dinner's carbs.",
@@ -245,9 +245,9 @@ function buildRoutine(dow) {
     if (gymId) steps.push({ id: "gym", time: t.train, title: `Gym: ${gymName} day`, sub: "2 hours · shower after" });
     steps.push({ id: "lunch", time: t.lunch, title: "Lunch", sub: LUNCH.food, info: LUNCH.info });
     if (sat) {
-      steps.push({ id: "snack", time: t.snack, title: "Snack: cardio day (bigger)", sub: `${SNACK.food} + 2 peanut butter toast + 300ml whole milk`, info: [
-        "The usual banana + flapjack, plus 2 slices of toast with peanut butter and a 300ml glass of whole milk.",
-        "The extra is ~500 kcal and 20g protein, which covers an hour of rope. Only did 30 min? Skip the milk.",
+      steps.push({ id: "snack", time: t.snack, title: "Snack: cardio day (bigger)", sub: "Banana + peanut butter & jam sandwich + 300ml whole milk", info: [
+        "The usual banana + sandwich, but add peanut butter under the jam, plus a 300ml glass of whole milk.",
+        "The extra is ~370 kcal and 17g protein. Did the full hour? Add another banana. Only did 30 min? Skip the milk."
       ] });
     } else {
       steps.push({ id: "snack", time: t.snack, title: "Snack", sub: SNACK.food, info: SNACK.info });
